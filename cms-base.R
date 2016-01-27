@@ -28,6 +28,8 @@ library(foreign)
 library(maps)
 library(maptools)
 library(mapproj)
+library(rgeos)
+library(rgdal)
 library(ggplot2)
 
 source("./utils.R", echo = TRUE)
