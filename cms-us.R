@@ -42,19 +42,24 @@ xlat <- data.frame(drg = c("CHRONIC OBSTRUCTIVE PULMONARY DISEASE",
                    stringsAsFactors = FALSE)
 drg.top.by.state <- left_join(drg.top.by.state, xlat, by = "drg")
 
+# Read US states map shapefile.
+usa.sp <- readOGR(dsn = "./states_map", layer = "states")
+usa.sp@data$id = rownames(usa.sp@data)
+usa.map <- fortify(usa.sp, region = "id")
 
-states.map <- map_data("state")
-lookup <- data.frame(region = tolower(c(state.name, "District of Columbia")),
-                     state = c(state.abb, "DC"),
-                     stringsAsFactors = FALSE)
-states.map <- left_join(states.map, lookup, by = "region")
-states.map <- left_join(states.map, drg.top.by.state, by = "state")
+# Annotate map data with fill info so we can color by procedure.
+usa.sp@data$state <- as.character(usa.sp@data$state)
+usa.sp@data <- left_join(usa.sp@data, drg.top.by.state[,c("state", "Procedure"),], by = "state")
 
+# Merge fill variables, etc. with polydon data.
+usa.map = left_join(usa.map, usa.sp@data, by = "id")
+
+# Make the plot.
 gg <- ggplot() +
-    geom_polygon(data = states.map,
-                 aes(x = long, y = lat, group = group, fill = Procedure),
-                 colour = "black") +
-    coord_map() +
+    geom_map(data = usa.map, map = usa.map,
+             aes(x = long, y = lat, map_id = id, group = group, fill = Procedure),
+             color = "black") +
+    coord_equal() +
     theme_bw() +
     scale_fill_brewer(palette = "Pastel1") +
     labs(title = "Most Frequent Inpatient Procedure by State") +
